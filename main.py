@@ -6,6 +6,10 @@ app = FastAPI(title="TSGLabs Order Fixtures")
 # References marked (REAL) are taken from the Paystack test dashboard.
 # References marked (PLACEHOLDER) are invented and will return 400 from
 # Paystack verify. Use them only to test the verification-error path.
+#
+# Each order that goes through verification has its own unique reference.
+# ORD-214 and ORD-215 are terminal-state rows and never verify, so their
+# reference reuse is harmless.
 
 ORDERS = {
     # ── happy path: payment verified, amount matches ──
@@ -98,7 +102,7 @@ ORDERS = {
         "order_status": "pending_payment",
     },
 
-    # ── amount mismatch: Paystack succeeds, amount differs ──
+    # ── amount mismatch: Paystack succeeds, amount is short ──
     "ORD-210": {
         "order_id": "ORD-210",
         "phone_norm": "8154447788",
@@ -107,7 +111,7 @@ ORDERS = {
         "event_date": "2026-10-27",
         "amount_due_kobo": 6500000,   # ₦65,000 due
         "amount_paid_kobo": None,
-        "payment_reference": "invpay_1d486f9692e14c13a0c7e17bfff57e07",  # REAL, but ₦50,000 only
+        "payment_reference": "payla_bf95a567c8d24c1f935df417b48c5620",  # REAL, ₦50,923 — genuinely short
         "order_status": "pending_payment",
     },
 
@@ -190,8 +194,15 @@ ORDERS = {
     },
 }
 
-# ORD-299 has been removed. ORD-211 is the deliberate 500 case.
+# ORD-211 is the deliberate 500 case, simulating an upstream failure.
 FAILING_ORDER_IDS = {"ORD-211"}
+
+# Only these status transitions are allowed. Anything else is rejected
+# by the backend, so the agent cannot corrupt an order state by calling
+# the status endpoint with the wrong value.
+ALLOWED_TRANSITIONS = {
+    "pending_payment": {"paid_awaiting_ingredients"},
+}
 
 
 class StatusUpdate(BaseModel):
@@ -247,5 +258,27 @@ def update_status(order_id: str, body: StatusUpdate):
             status_code=404,
             detail={"error": "not_found"},
         )
-    order["order_status"] = body.status
+
+    current = order["order_status"]
+    requested = body.status
+
+    # Idempotent: asking for the state the order is already in is a
+    # success and changes nothing. This protects against a repeated
+    # tool call from a retried conversation turn.
+    if current == requested:
+        return order
+
+    allowed = ALLOWED_TRANSITIONS.get(current, set())
+    if requested not in allowed:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "error": "invalid_transition",
+                "from": current,
+                "to": requested,
+                "allowed": sorted(allowed),
+            },
+        )
+
+    order["order_status"] = requested
     return order
