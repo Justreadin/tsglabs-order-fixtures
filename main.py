@@ -3,17 +3,22 @@ from pydantic import BaseModel
 
 app = FastAPI(title="TSGLabs Order Fixtures")
 
+# References marked (REAL) are taken from the Paystack test dashboard.
+# References marked (PLACEHOLDER) are invented and will return 400 from
+# Paystack verify. Use them only to test the verification-error path.
+
 ORDERS = {
+    # ── happy path: payment verified, amount matches ──
     "ORD-201": {
         "order_id": "ORD-201",
         "phone_norm": "7063749513",
         "customer_name": "Ada",
         "items": "2 trays jollof, 50 small chops",
         "event_date": "2026-10-23",
-        "amount_due_kobo": 8500000,
-        "amount_paid_kobo": 8500000,
-        "payment_reference": "PSK_ref_201",
-        "order_status": "paid_preparing",
+        "amount_due_kobo": 5000000,
+        "amount_paid_kobo": None,
+        "payment_reference": "invpay_1d486f9692e14c13a0c7e17bfff57e07",  # REAL, ₦50,000
+        "order_status": "pending_payment",
     },
     "ORD-202": {
         "order_id": "ORD-202",
@@ -21,10 +26,10 @@ ORDERS = {
         "customer_name": "Tunde",
         "items": "1 celebration cake (2-tier)",
         "event_date": "2026-10-25",
-        "amount_due_kobo": 4500000,
+        "amount_due_kobo": 750000,
         "amount_paid_kobo": None,
-        "payment_reference": "PSK_ref_202",
-        "order_status": "paid_awaiting_ingredients",
+        "payment_reference": "payla-sub-9751ab89c7bd4cad9759f50e0440088b",  # REAL, ₦7,500
+        "order_status": "pending_payment",
     },
     "ORD-203": {
         "order_id": "ORD-203",
@@ -32,10 +37,10 @@ ORDERS = {
         "customer_name": "Chioma",
         "items": "3 trays fried rice",
         "event_date": "2026-10-22",
-        "amount_due_kobo": 6000000,
+        "amount_due_kobo": 500000,
         "amount_paid_kobo": None,
-        "payment_reference": "PSK_ref_203",
-        "order_status": "payment_abandoned",
+        "payment_reference": "invpay_c4fd848bb54b4143bfc605e54b5af537",  # REAL, ₦5,000
+        "order_status": "pending_payment",
     },
     "ORD-204": {
         "order_id": "ORD-204",
@@ -43,10 +48,10 @@ ORDERS = {
         "customer_name": "Bola",
         "items": "1 tray egusi, 1 tray jollof",
         "event_date": "2026-10-24",
-        "amount_due_kobo": 7000000,
+        "amount_due_kobo": 7500000,
         "amount_paid_kobo": None,
-        "payment_reference": "PSK_ref_204",
-        "order_status": "payment_failed",
+        "payment_reference": "payla-sub-51463aa627c645e0bab65251bbbf66fc",  # REAL, ₦75,000
+        "order_status": "pending_payment",
     },
     "ORD-205": {
         "order_id": "ORD-205",
@@ -54,10 +59,10 @@ ORDERS = {
         "customer_name": "Ngozi",
         "items": "100 small chops",
         "event_date": "2026-10-26",
-        "amount_due_kobo": 5000000,
-        "amount_paid_kobo": 5000000,
-        "payment_reference": "PSK_ref_205",
-        "order_status": "paid_awaiting_ingredients",
+        "amount_due_kobo": 4000000,
+        "amount_paid_kobo": None,
+        "payment_reference": "invpay_0c9c754cf17545d59237f193f40a7c09",  # REAL, ₦40,000
+        "order_status": "pending_payment",
     },
     "ORD-206": {
         "order_id": "ORD-206",
@@ -65,10 +70,10 @@ ORDERS = {
         "customer_name": "Emeka",
         "items": "1 tray seafood okra",
         "event_date": "2026-10-20",
-        "amount_due_kobo": 5500000,
-        "amount_paid_kobo": 5500000,
-        "payment_reference": "PSK_ref_206",
-        "order_status": "ready_for_dispatch",
+        "amount_due_kobo": 1027900,
+        "amount_paid_kobo": None,
+        "payment_reference": "payla_af20d582462a47749f804bc88c36b9c2",  # REAL, ₦10,279
+        "order_status": "pending_payment",
     },
     "ORD-207": {
         "order_id": "ORD-207",
@@ -76,10 +81,10 @@ ORDERS = {
         "customer_name": "Fatima",
         "items": "2 trays jollof, 1 tray coleslaw",
         "event_date": "2026-10-21",
-        "amount_due_kobo": 9000000,
-        "amount_paid_kobo": 9000000,
-        "payment_reference": "PSK_ref_207",
-        "order_status": "dispatched",
+        "amount_due_kobo": 824900,
+        "amount_paid_kobo": None,
+        "payment_reference": "payla_06c2373b79ba43a29491b34e2d14d97a",  # REAL, ₦8,249
+        "order_status": "pending_payment",
     },
     "ORD-208": {
         "order_id": "ORD-208",
@@ -87,33 +92,52 @@ ORDERS = {
         "customer_name": "Kelechi",
         "items": "50 puff-puff, 50 samosa",
         "event_date": "2026-10-18",
-        "amount_due_kobo": 3000000,
-        "amount_paid_kobo": 3000000,
-        "payment_reference": "PSK_ref_208",
-        "order_status": "delivered",
-    },
-    "ORD-209": {
-        "order_id": "ORD-209",
-        "phone_norm": "7063749513",
-        "customer_name": "Ada",
-        "items": "1 tray chicken stew",
-        "event_date": "2026-10-30",
-        "amount_due_kobo": 4000000,
+        "amount_due_kobo": 621800,
         "amount_paid_kobo": None,
-        "payment_reference": "PSK_ref_209",
+        "payment_reference": "payla_358d030cf0ad4e6d97e12783e79096da",  # REAL, ₦6,218
         "order_status": "pending_payment",
     },
+
+    # ── amount mismatch: Paystack succeeds, amount differs ──
     "ORD-210": {
         "order_id": "ORD-210",
         "phone_norm": "8154447788",
         "customer_name": "Ify",
         "items": "1 tray fried rice, 1 tray chicken",
         "event_date": "2026-10-27",
-        "amount_due_kobo": 6500000,
-        "amount_paid_kobo": 3000000,
-        "payment_reference": "PSK_ref_210",
+        "amount_due_kobo": 6500000,   # ₦65,000 due
+        "amount_paid_kobo": None,
+        "payment_reference": "invpay_1d486f9692e14c13a0c7e17bfff57e07",  # REAL, but ₦50,000 only
+        "order_status": "pending_payment",
+    },
+
+    # ── payment failed at Paystack ──
+    "ORD-204B": {
+        "order_id": "ORD-204B",
+        "phone_norm": "7061112222",
+        "customer_name": "Bola",
+        "items": "1 tray egusi, 1 tray jollof",
+        "event_date": "2026-10-24",
+        "amount_due_kobo": 50200000,  # ₦502,000
+        "amount_paid_kobo": None,
+        "payment_reference": "invpay_407558a02f5b420b918915f9b6520a6a",  # REAL, FAILED
         "order_status": "payment_failed",
     },
+
+    # ── verification error: reference does not exist ──
+    "ORD-211": {
+        "order_id": "ORD-211",
+        "phone_norm": "8029998877",
+        "customer_name": "Chinedu",
+        "items": "1 cake (1-tier)",
+        "event_date": "2026-10-29",
+        "amount_due_kobo": 3500000,
+        "amount_paid_kobo": None,
+        "payment_reference": "PSK_ref_does_not_exist_211",  # PLACEHOLDER, will 400
+        "order_status": "pending_payment",
+    },
+
+    # ── second order on Ada's phone: ambiguity case ──
     "ORD-212": {
         "order_id": "ORD-212",
         "phone_norm": "7063749513",
@@ -121,14 +145,54 @@ ORDERS = {
         "items": "1 tray jollof",
         "event_date": "2026-10-31",
         "amount_due_kobo": 3500000,
-        "amount_paid_kobo": 3500000,
-        "payment_reference": "PSK_ref_212",
+        "amount_paid_kobo": None,
+        "payment_reference": "invpay_27da6dbf34424704b5bd027145a396d7",  # REAL, ₦7,207.11
+        "order_status": "pending_payment",
+    },
+
+    # ── third order on Ada's phone ──
+    "ORD-213": {
+        "order_id": "ORD-213",
+        "phone_norm": "7063749513",
+        "customer_name": "Ada",
+        "items": "1 tray chicken stew",
+        "event_date": "2026-10-30",
+        "amount_due_kobo": 824900,
+        "amount_paid_kobo": None,
+        "payment_reference": "payla_35b5543a90ef4702a6f458d6cf731f2f",  # REAL, ₦8,249
+        "order_status": "pending_payment",
+    },
+
+    # ── already dispatched, no verification needed ──
+    "ORD-214": {
+        "order_id": "ORD-214",
+        "phone_norm": "8032221111",
+        "customer_name": "Yemi",
+        "items": "2 trays jollof",
+        "event_date": "2026-10-19",
+        "amount_due_kobo": 5000000,
+        "amount_paid_kobo": 5000000,
+        "payment_reference": "invpay_1d486f9692e14c13a0c7e17bfff57e07",  # REAL
         "order_status": "dispatched",
+    },
+
+    # ── delivered, terminal state ──
+    "ORD-215": {
+        "order_id": "ORD-215",
+        "phone_norm": "8051112222",
+        "customer_name": "Sade",
+        "items": "1 tray fried rice",
+        "event_date": "2026-10-15",
+        "amount_due_kobo": 500000,
+        "amount_paid_kobo": 500000,
+        "payment_reference": "invpay_c4fd848bb54b4143bfc605e54b5af537",  # REAL
+        "order_status": "delivered",
     },
 }
 
-# ORD-211 is deliberately excluded from normal lookup to simulate an
-# upstream API failure. Any request for it returns a 500.
+# ORD-299 has been removed. ORD-211 is the deliberate 500 case.
+FAILING_ORDER_IDS = {"ORD-211"}
+
 
 class StatusUpdate(BaseModel):
     status: str
@@ -141,7 +205,7 @@ def health():
 
 @app.get("/orders/{order_id}")
 def get_order(order_id: str):
-    if order_id == "ORD-211":
+    if order_id in FAILING_ORDER_IDS:
         raise HTTPException(
             status_code=500,
             detail={"error": "upstream_unavailable"},
@@ -172,7 +236,7 @@ def lookup_by_phone(phone: str = Query(...)):
 
 @app.post("/orders/{order_id}/status")
 def update_status(order_id: str, body: StatusUpdate):
-    if order_id == "ORD-211":
+    if order_id in FAILING_ORDER_IDS:
         raise HTTPException(
             status_code=500,
             detail={"error": "upstream_unavailable"},
