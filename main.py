@@ -210,13 +210,31 @@ class StatusUpdate(BaseModel):
     amount_paid_kobo: int | None = None
 
 
+def normalise_phone(raw: str) -> str:
+    """Strip spaces, dashes, brackets and a leading +234/234/0."""
+    cleaned = (
+        raw.replace(" ", "")
+        .replace("-", "")
+        .replace("(", "")
+        .replace(")", "")
+        .replace(".", "")
+    )
+    if cleaned.startswith("+234"):
+        cleaned = cleaned[4:]
+    elif cleaned.startswith("234"):
+        cleaned = cleaned[3:]
+    elif cleaned.startswith("0"):
+        cleaned = cleaned[1:]
+    return cleaned
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
 
 @app.get("/orders/{order_id}")
-def get_order(order_id: str):
+def get_order(order_id: str, phone: str | None = Query(default=None)):
     if order_id in FAILING_ORDER_IDS:
         raise HTTPException(
             status_code=500,
@@ -228,15 +246,25 @@ def get_order(order_id: str):
             status_code=404,
             detail={"error": "not_found"},
         )
+    # When a phone number is supplied, the order is only returned if it
+    # matches. This moves the identity check out of the prompt and into
+    # the service, so a premature lookup cannot retrieve another
+    # customer's order.
+    if phone is not None and normalise_phone(phone) != order["phone_norm"]:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "not_found"},
+        )
     return order
 
 
 @app.get("/orders")
 def lookup_by_phone(phone: str = Query(...)):
+    norm = normalise_phone(phone)
     matches = [
         {"order_id": o["order_id"], "event_date": o["event_date"]}
         for o in ORDERS.values()
-        if o["phone_norm"] == phone
+        if o["phone_norm"] == norm
     ]
     if not matches:
         raise HTTPException(
