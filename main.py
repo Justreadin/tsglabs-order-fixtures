@@ -207,6 +207,7 @@ ALLOWED_TRANSITIONS = {
 
 class StatusUpdate(BaseModel):
     status: str
+    amount_paid_kobo: int | None = None
 
 
 @app.get("/health")
@@ -263,9 +264,11 @@ def update_status(order_id: str, body: StatusUpdate):
     requested = body.status
 
     # Idempotent: asking for the state the order is already in is a
-    # success and changes nothing. This protects against a repeated
-    # tool call from a retried conversation turn.
+    # success and changes nothing. It still records the paid amount if
+    # it was previously missing, so a retry can repair an earlier run.
     if current == requested:
+        if body.amount_paid_kobo is not None and order["amount_paid_kobo"] is None:
+            order["amount_paid_kobo"] = body.amount_paid_kobo
         return order
 
     allowed = ALLOWED_TRANSITIONS.get(current, set())
@@ -280,5 +283,16 @@ def update_status(order_id: str, body: StatusUpdate):
             },
         )
 
+    # A paid transition must carry the verified amount. Refusing a
+    # missing amount keeps the record honest: an order cannot read as
+    # paid without recording how much was received.
+    if requested == "paid_awaiting_ingredients" and body.amount_paid_kobo is None:
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "amount_paid_required"},
+        )
+
     order["order_status"] = requested
+    if body.amount_paid_kobo is not None:
+        order["amount_paid_kobo"] = body.amount_paid_kobo
     return order
