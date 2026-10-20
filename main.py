@@ -10,6 +10,10 @@ app = FastAPI(title="TSGLabs Order Fixtures")
 # Each order that goes through verification has its own unique reference.
 # ORD-214 and ORD-215 are terminal-state rows and never verify, so their
 # reference reuse is harmless.
+#
+# delivery_window_start / delivery_window_end are ISO datetimes or None.
+# They describe the range the vendor commits to, not an exact arrival time.
+# A None window means the vendor has not scheduled delivery yet.
 
 ORDERS = {
     # ── happy path: payment verified, amount matches ──
@@ -19,6 +23,8 @@ ORDERS = {
         "customer_name": "Ada",
         "items": "2 trays jollof, 50 small chops",
         "event_date": "2026-10-23",
+        "delivery_window_start": "2026-10-23T10:00:00",
+        "delivery_window_end": "2026-10-23T13:00:00",
         "amount_due_kobo": 5000000,
         "amount_paid_kobo": None,
         "payment_reference": "invpay_1d486f9692e14c13a0c7e17bfff57e07",  # REAL, ₦50,000
@@ -30,6 +36,8 @@ ORDERS = {
         "customer_name": "Tunde",
         "items": "1 celebration cake (2-tier)",
         "event_date": "2026-10-25",
+        "delivery_window_start": "2026-10-25T08:00:00",
+        "delivery_window_end": "2026-10-25T11:00:00",
         "amount_due_kobo": 750000,
         "amount_paid_kobo": None,
         "payment_reference": "payla-sub-9751ab89c7bd4cad9759f50e0440088b",  # REAL, ₦7,500
@@ -41,6 +49,8 @@ ORDERS = {
         "customer_name": "Chioma",
         "items": "3 trays fried rice",
         "event_date": "2026-10-22",
+        "delivery_window_start": "2026-10-22T09:00:00",
+        "delivery_window_end": "2026-10-22T12:00:00",
         "amount_due_kobo": 500000,
         "amount_paid_kobo": None,
         "payment_reference": "invpay_c4fd848bb54b4143bfc605e54b5af537",  # REAL, ₦5,000
@@ -52,6 +62,8 @@ ORDERS = {
         "customer_name": "Bola",
         "items": "1 tray egusi, 1 tray jollof",
         "event_date": "2026-10-24",
+        "delivery_window_start": "2026-10-24T10:00:00",
+        "delivery_window_end": "2026-10-24T14:00:00",
         "amount_due_kobo": 7500000,
         "amount_paid_kobo": None,
         "payment_reference": "payla-sub-51463aa627c645e0bab65251bbbf66fc",  # REAL, ₦75,000
@@ -63,6 +75,8 @@ ORDERS = {
         "customer_name": "Ngozi",
         "items": "100 small chops",
         "event_date": "2026-10-26",
+        "delivery_window_start": "2026-10-26T09:00:00",
+        "delivery_window_end": "2026-10-26T12:00:00",
         "amount_due_kobo": 4000000,
         "amount_paid_kobo": None,
         "payment_reference": "invpay_0c9c754cf17545d59237f193f40a7c09",  # REAL, ₦40,000
@@ -74,6 +88,8 @@ ORDERS = {
         "customer_name": "Emeka",
         "items": "1 tray seafood okra",
         "event_date": "2026-10-20",
+        "delivery_window_start": "2026-10-20T11:00:00",
+        "delivery_window_end": "2026-10-20T14:00:00",
         "amount_due_kobo": 1027900,
         "amount_paid_kobo": None,
         "payment_reference": "payla_af20d582462a47749f804bc88c36b9c2",  # REAL, ₦10,279
@@ -85,6 +101,8 @@ ORDERS = {
         "customer_name": "Fatima",
         "items": "2 trays jollof, 1 tray coleslaw",
         "event_date": "2026-10-21",
+        "delivery_window_start": None,
+        "delivery_window_end": None,
         "amount_due_kobo": 824900,
         "amount_paid_kobo": None,
         "payment_reference": "payla_06c2373b79ba43a29491b34e2d14d97a",  # REAL, ₦8,249
@@ -96,6 +114,8 @@ ORDERS = {
         "customer_name": "Kelechi",
         "items": "50 puff-puff, 50 samosa",
         "event_date": "2026-10-18",
+        "delivery_window_start": "2026-10-18T08:00:00",
+        "delivery_window_end": "2026-10-18T10:00:00",
         "amount_due_kobo": 621800,
         "amount_paid_kobo": None,
         "payment_reference": "payla_358d030cf0ad4e6d97e12783e79096da",  # REAL, ₦6,218
@@ -109,6 +129,8 @@ ORDERS = {
         "customer_name": "Ify",
         "items": "1 tray fried rice, 1 tray chicken",
         "event_date": "2026-10-27",
+        "delivery_window_start": "2026-10-27T10:00:00",
+        "delivery_window_end": "2026-10-27T13:00:00",
         "amount_due_kobo": 6500000,   # ₦65,000 due
         "amount_paid_kobo": None,
         "payment_reference": "payla_bf95a567c8d24c1f935df417b48c5620",  # REAL, ₦50,923 — genuinely short
@@ -122,6 +144,8 @@ ORDERS = {
         "customer_name": "Bola",
         "items": "1 tray egusi, 1 tray jollof",
         "event_date": "2026-10-24",
+        "delivery_window_start": "2026-10-24T10:00:00",
+        "delivery_window_end": "2026-10-24T14:00:00",
         "amount_due_kobo": 50200000,  # ₦502,000
         "amount_paid_kobo": None,
         "payment_reference": "invpay_407558a02f5b420b918915f9b6520a6a",  # REAL, FAILED
@@ -135,6 +159,8 @@ ORDERS = {
         "customer_name": "Chinedu",
         "items": "1 cake (1-tier)",
         "event_date": "2026-10-29",
+        "delivery_window_start": None,
+        "delivery_window_end": None,
         "amount_due_kobo": 3500000,
         "amount_paid_kobo": None,
         "payment_reference": "PSK_ref_does_not_exist_211",  # PLACEHOLDER, will 400
@@ -148,6 +174,8 @@ ORDERS = {
         "customer_name": "Ada",
         "items": "1 tray jollof",
         "event_date": "2026-10-31",
+        "delivery_window_start": "2026-10-31T09:00:00",
+        "delivery_window_end": "2026-10-31T12:00:00",
         "amount_due_kobo": 3500000,
         "amount_paid_kobo": None,
         "payment_reference": "invpay_27da6dbf34424704b5bd027145a396d7",  # REAL, ₦7,207.11
@@ -161,6 +189,8 @@ ORDERS = {
         "customer_name": "Ada",
         "items": "1 tray chicken stew",
         "event_date": "2026-10-30",
+        "delivery_window_start": "2026-10-30T08:00:00",
+        "delivery_window_end": "2026-10-30T11:00:00",
         "amount_due_kobo": 824900,
         "amount_paid_kobo": None,
         "payment_reference": "payla_35b5543a90ef4702a6f458d6cf731f2f",  # REAL, ₦8,249
@@ -174,6 +204,8 @@ ORDERS = {
         "customer_name": "Yemi",
         "items": "2 trays jollof",
         "event_date": "2026-10-19",
+        "delivery_window_start": "2026-10-19T10:00:00",
+        "delivery_window_end": "2026-10-19T13:00:00",
         "amount_due_kobo": 5000000,
         "amount_paid_kobo": 5000000,
         "payment_reference": "invpay_1d486f9692e14c13a0c7e17bfff57e07",  # REAL
@@ -187,6 +219,8 @@ ORDERS = {
         "customer_name": "Sade",
         "items": "1 tray fried rice",
         "event_date": "2026-10-15",
+        "delivery_window_start": "2026-10-15T09:00:00",
+        "delivery_window_end": "2026-10-15T12:00:00",
         "amount_due_kobo": 500000,
         "amount_paid_kobo": 500000,
         "payment_reference": "invpay_c4fd848bb54b4143bfc605e54b5af537",  # REAL
@@ -262,7 +296,12 @@ def get_order(order_id: str, phone: str | None = Query(default=None)):
 def lookup_by_phone(phone: str = Query(...)):
     norm = normalise_phone(phone)
     matches = [
-        {"order_id": o["order_id"], "event_date": o["event_date"]}
+        {
+            "order_id": o["order_id"],
+            "event_date": o["event_date"],
+            "delivery_window_start": o["delivery_window_start"],
+            "delivery_window_end": o["delivery_window_end"],
+        }
         for o in ORDERS.values()
         if o["phone_norm"] == norm
     ]
