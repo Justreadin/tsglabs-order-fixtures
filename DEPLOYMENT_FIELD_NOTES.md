@@ -226,4 +226,4 @@ The most important operational lesson is to verify both sides of an interaction:
 
 Testing on the final integration surface also matters. The WhatsApp Simulator revealed rendering issues that the builder direct line did not, demonstrating that a successful test in one interface does not establish that another interface presents the same information safely.
 
-For AI product development, this distinction is critical: **the system must not only perform the correct action; it must also report that action accurately and expose only the information intended for the customer.**
+For AI product development, this is critical: **the system must not only perform the correct action; it must also report that action accurately and expose only the information intended for the customer.**
