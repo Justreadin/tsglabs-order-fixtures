@@ -7,13 +7,7 @@ app = FastAPI(title="TSGLabs Order Fixtures")
 # References marked (PLACEHOLDER) are invented and will return 400 from
 # Paystack verify. Use them only to test the verification-error path.
 #
-# Each order that goes through verification has its own unique reference.
-# ORD-214 and ORD-215 are terminal-state rows and never verify, so their
-# reference reuse is harmless.
-#
 # delivery_window_start / delivery_window_end are ISO datetimes or None.
-# They describe the range the vendor commits to, not an exact arrival time.
-# A None window means the vendor has not scheduled delivery yet.
 
 ORDERS = {
     # ── happy path: payment verified, amount matches ──
@@ -152,7 +146,7 @@ ORDERS = {
         "order_status": "payment_failed",
     },
 
-    # ── verification error: reference does not exist ──
+    # ── verification error: reference does not exist in Paystack ──
     "ORD-211": {
         "order_id": "ORD-211",
         "phone_norm": "8029998877",
@@ -163,7 +157,7 @@ ORDERS = {
         "delivery_window_end": None,
         "amount_due_kobo": 3500000,
         "amount_paid_kobo": None,
-        "payment_reference": "PSK_ref_does_not_exist_211",  # PLACEHOLDER, will 400
+        "payment_reference": "PSK_ref_does_not_exist_211",  # PLACEHOLDER
         "order_status": "pending_payment",
     },
 
@@ -228,8 +222,9 @@ ORDERS = {
     },
 }
 
-# ORD-211 is the deliberate 500 case, simulating an upstream failure.
-FAILING_ORDER_IDS = {"ORD-211"}
+# ORD-211 will now succeed on lookup so the agent can test the
+# Paystack verify failure path.
+FAILING_ORDER_IDS = set()
 
 # Only these status transitions are allowed. Anything else is rejected
 # by the backend, so the agent cannot corrupt an order state by calling
@@ -280,10 +275,7 @@ def get_order(order_id: str, phone: str | None = Query(default=None)):
             status_code=404,
             detail={"error": "not_found"},
         )
-    # When a phone number is supplied, the order is only returned if it
-    # matches. This moves the identity check out of the prompt and into
-    # the service, so a premature lookup cannot retrieve another
-    # customer's order.
+    
     if phone is not None and normalise_phone(phone) != order["phone_norm"]:
         raise HTTPException(
             status_code=404,
@@ -330,12 +322,8 @@ def update_status(order_id: str, body: StatusUpdate):
     current = order["order_status"]
     requested = body.status
 
-    # Idempotent: asking for the state the order is already in is a
-    # success and changes nothing. It still records the paid amount if
-    # it was previously missing, so a retry can repair an earlier run.
+    # Idempotent: asking for the state the order is already in is a success.
     if current == requested:
-        if body.amount_paid_kobo is not None and order["amount_paid_kobo"] is None:
-            order["amount_paid_kobo"] = body.amount_paid_kobo
         return order
 
     allowed = ALLOWED_TRANSITIONS.get(current, set())
@@ -350,16 +338,18 @@ def update_status(order_id: str, body: StatusUpdate):
             },
         )
 
-    # A paid transition must carry the verified amount. Refusing a
-    # missing amount keeps the record honest: an order cannot read as
-    # paid without recording how much was received.
+    # A paid transition must carry the verified amount.
     if requested == "paid_awaiting_ingredients" and body.amount_paid_kobo is None:
         raise HTTPException(
             status_code=400,
             detail={"error": "amount_paid_required"},
         )
 
+    # Apply the transition
     order["order_status"] = requested
-    if body.amount_paid_kobo is not None:
+    
+    # Only record the amount if the transition was to a paid state.
+    if requested == "paid_awaiting_ingredients":
         order["amount_paid_kobo"] = body.amount_paid_kobo
+        
     return order
