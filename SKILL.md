@@ -51,8 +51,9 @@ the vendor.
    confirm anything.
 6. When verification succeeds and the amount matches, update the order record:
    set the status to `paid_awaiting_ingredients` and pass `amount_paid_kobo` as
-   the verified amount from the payment response. Then tell the customer their
-   verified status and, if relevant, their event date and delivery window.
+   the verified positive integer amount from the payment response. You are required
+   to pass the amount. Then tell the customer their verified status and, if relevant,
+   their event date and delivery window.
 7. When verification fails, is still pending, or the amount does not match, do
    not confirm payment. Follow the wording in `references/order-statuses.md` and
    escalate to the vendor as described in `references/escalation-policy.md`.
@@ -175,7 +176,7 @@ ingredient sourcing from the supplier. The event date on the order is 23 October
 and delivery is scheduled for 23 October between 10am and 1pm. A more exact time
 isn't confirmed."
 
-## Example of a bad result — never do this
+## Example of a bad result, never do this
 
 Customer: "What can you help me with?"
 

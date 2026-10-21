@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Literal
 
 app = FastAPI(title="TSGLabs Order Fixtures")
 
@@ -235,8 +236,10 @@ ALLOWED_TRANSITIONS = {
 
 
 class StatusUpdate(BaseModel):
-    status: str
-    amount_paid_kobo: int | None = None
+    # Enforce the exact status string allowed by the transition rules.
+    status: Literal["paid_awaiting_ingredients"]
+    # Enforce that the amount is a positive integer (gt=0).
+    amount_paid_kobo: int | None = Field(default=None, gt=0)
 
 
 def normalise_phone(raw: str) -> str:
