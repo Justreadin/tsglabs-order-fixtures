@@ -1,7 +1,11 @@
-tsglabs-order-fixtures/
-  main.py
-  requirements.txt
-  Procfile
-  README.md
-  fixtures/
-    orders.json        (optional — can inline the dict instead)
+layla-orders/
+├── README.md
+├── DEPLOYMENT_FIELD_NOTES.md
+├── SKILL.md
+├── references/
+│   ├── business-context.md
+│   ├── order-statuses.md
+│   ├── identity-rule.md
+│   └── escalation-policy.md
+└── src/
+    └── ...
