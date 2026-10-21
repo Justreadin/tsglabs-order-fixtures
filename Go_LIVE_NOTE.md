@@ -88,7 +88,7 @@ A conversation can only be escalated once under the current behaviour. If a cust
 
 Until this limitation is fixed and retested, the owner should review the agent's conversation list during service hours rather than relying exclusively on escalation alerts.
 
-## 7. Ownership and incident response
+## 7. Ownership and Incident Response
 
 Name one person responsible for Layla day to day and one backup. Both should know how to access the Chord workspace, Paystack account, and order service, subject to appropriate access controls.
 
@@ -101,11 +101,18 @@ They should know how to:
 
 Pausing the agent is reversible, but the team should know who is authorized to do it and when to use it.
 
-## Go-live decision
+## Go-Live Decision
 
 **Do not open Layla Orders to real customers until the critical requirements above have been completed and tested**, especially payment-reference binding, live payment verification, persistent order storage, real WhatsApp access, and confirmed human escalation.
 
 The prototype demonstrates the intended workflow, but the remaining controls are necessary to operate it reliably with real customer orders and payments.
 
-The next thing to build is order intake: 
-letting a customer start a request before they have paid, so the vendor receives a structured request rather than a series of WhatsApp messages. That would let the agent collect the event date, items, quantity and delivery location, and create a request for you to review and price. It should not quote prices itself. That is a second project, and it should be built only after this one has run in production for a few weeks.
+## Recommended Next Project: Order Intake
+
+The next feature to consider is order intake: allowing customers to start an order request before they have paid.
+
+Instead of exchanging a series of WhatsApp messages, the agent would collect the event date, requested items, quantities, and delivery location, then create a structured request for the vendor to review and price.
+
+The agent would **not quote prices or confirm an order independently**. The vendor would retain control over pricing and acceptance.
+
+This should be treated as a separate project and considered after Layla Orders has operated in production for a few weeks. That would give the business time to evaluate the order-assurance workflow, identify recurring customer needs, and use real operational experience to guide the next development decision.

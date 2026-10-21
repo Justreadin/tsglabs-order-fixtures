@@ -1,8 +1,6 @@
 # Layla Orders: Order Assurance API
 
-[![Python](https://img.shields.io/badge/Python-3.11%2B-blue)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/API-FastAPI-009688)](https://fastapi.tiangolo.com/)
-[![Status](https://img.shields.io/badge/status-prototype-orange)](#project-status)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-blue)](https://www.python.org/) [![FastAPI](https://img.shields.io/badge/API-FastAPI-009688)](https://fastapi.tiangolo.com/) [![Status](https://img.shields.io/badge/status-prototype-orange)](#project-status)
 
 A small FastAPI order-fixture service built for the **TSG Labs Chord build exercise**. It exposes synthetic order records to **Layla Orders**, a Chord-based WhatsApp teammate for the fictional Lagos food vendor **Pepperleaf Kitchen**.
 
@@ -22,11 +20,13 @@ Layla uses the service to retrieve an order, verify its payment with Paystack in
 - [Test the API](#test-the-api)
 - [Deploy on Railway](#deploy-on-railway)
 - [Test through Chord](#test-through-chord)
+- [How to test Layla Orders](#how-to-test-layla-orders)
 - [Security and data handling](#security-and-data-handling)
 - [Known limitations and production requirements](#known-limitations-and-production-requirements)
 - [Related submission documents](#related-submission-documents)
 - [External references](#external-references)
 - [Use of AI](#use-of-ai)
+- [Project status](#project-status)
 
 ## Overview
 
@@ -48,21 +48,21 @@ This repository contains **the order API only**. The Chord agent, skill instruct
 ```mermaid
 flowchart TD
     A[Customer messages Layla on WhatsApp simulator] --> B[Layla receives order ID and ordering phone]
-    B --> C[Order API returns matching synthetic order]
-    C --> D[Layla verifies payment reference with Paystack test mode]
+    B --> C[Order API returns synthetic order]
+    C --> D[Layla verifies payment with Paystack test mode]
     D --> E{Verification succeeds and order details match?}
     E -- Yes --> F[POST status update with verified amount]
-    F --> G[Order status becomes paid_awaiting_ingredients]
+    F --> G[Order becomes paid_awaiting_ingredients]
     G --> H[Layla reports verified status and recorded delivery window]
     E -- No --> I[Do not mark paid]
-    I --> J[Explain that payment cannot be confirmed and escalate]
+    I --> J[Explain payment cannot be confirmed and escalate]
 ```
 
 The diagram describes the intended workflow. The API provides order lookup and status-update endpoints; payment verification is performed by the Chord teammate through the configured Paystack integration.
 
 ## Repository contents
 
-The repository should contain the API code and the supporting submission documents. Update this list if your committed directory structure differs.
+The repository should contain the API code and supporting submission documents. Update this list if your committed directory structure differs.
 
 ```text
 .
@@ -81,13 +81,13 @@ The repository should contain the API code and the supporting submission documen
     └── escalation-policy.md
 ```
 
-- `main.py` : FastAPI application and synthetic order fixtures.
-- `requirements.txt` : Python dependencies.
-- `Procfile` : Railway web-process start command.
-- `SKILL.md` and `references/` : Layla's instructions and supporting policy/context files for Chord. These are uploaded/configured in Chord separately from this API service.
-- `PROBLEM_STATEMENT.md` : role preference, business context, problem, proposed solution, value hypothesis, and scope.
-- `DEPLOYMENT_FIELD_NOTES.md` : issues encountered during setup/testing, observed behaviour, diagnoses, mitigations, and recommended platform improvements.
-- `GO_LIVE_NOTE.md` : operator-facing explanation of the workflow, limitations, and requirements before a real launch.
+- `main.py` — FastAPI application and synthetic order fixtures.
+- `requirements.txt` — Python dependencies.
+- `Procfile` — Railway web-process start command.
+- `SKILL.md` and `references/` — Layla's instructions and supporting policy/context files for Chord. These are uploaded/configured in Chord separately from this API service.
+- `PROBLEM_STATEMENT.md` — Role preference, business context, problem, proposed solution, value hypothesis, and scope.
+- `DEPLOYMENT_FIELD_NOTES.md` — Issues encountered during setup/testing, observed behaviour, diagnoses, mitigations, and recommended platform improvements.
+- `GO_LIVE_NOTE.md` — Operator-facing explanation of the workflow, limitations, and requirements before a real launch.
 
 ## API reference
 
@@ -100,11 +100,11 @@ The application exposes the following endpoints.
 | `GET` | `/orders?phone={normalized_phone}` | Find orders associated with a normalized phone number |
 | `POST` | `/orders/{order_id}/status` | Request an allowed order-status transition |
 
-When the optional `phone` parameter is supplied to the single-order endpoint and does not match the order's stored phone number, the service returns `404`. The phone-based list endpoint returns the matching orders' identifiers and scheduling details as implemented by the fixture service.
+When the optional `phone` parameter is supplied to the single-order endpoint and does not match the order's stored phone number, the service returns `404`. The phone-based list endpoint returns matching orders' identifiers and scheduling details as implemented by the fixture service.
 
 ### `GET /health`
 
-Use this endpoint to check whether the application is responding.
+Checks whether the application is responding.
 
 Example:
 
@@ -130,6 +130,8 @@ curl.exe -i "https://<your-service-host>/orders/ORD-201?phone=7063749513"
 
 The phone number must use the normalized format expected by the fixture data. If a supplied number does not match, the endpoint returns `404` rather than disclosing the order.
 
+**Important:** The phone parameter is optional in the current prototype. This endpoint is not independently secured and must not be exposed as a production customer-data API in its current form.
+
 ### `GET /orders?phone={normalized_phone}`
 
 Returns matching orders for a normalized phone number.
@@ -140,7 +142,7 @@ Example:
 curl.exe "https://<your-service-host>/orders?phone=7063749513"
 ```
 
-The response includes order identifiers and scheduling details as implemented by the service. This endpoint is currently a prototype interface; see [Security and data handling](#security-and-data-handling) before considering any real deployment.
+The response includes order identifiers and scheduling details as implemented by the fixture service. This endpoint is currently a prototype interface; see [Security and data handling](#security-and-data-handling) before considering any real deployment.
 
 ### `POST /orders/{order_id}/status`
 
@@ -162,7 +164,7 @@ Requests an order status update. The request body uses JSON:
 - Repeating the current status is a no-op success, making a repeated status request safe with respect to the status transition.
 - Other unsupported transitions return `409` and include the current status, requested status, and allowed transition information.
 
-**Important:** This endpoint enforces the status-transition rules, but the prototype should not be treated as an independently secured payment authority. In a production design, the server must itself validate the payment evidence and the order-to-reference binding before allowing an order to be marked paid. A client-supplied amount alone is not proof of payment.
+> **Important:** This endpoint enforces status-transition rules, but the prototype is not an independently secured payment authority. In production, the server must validate the payment evidence and order-to-reference binding before allowing an order to be marked paid. A client-supplied amount alone is not proof of payment.
 
 ## Order states and transition rules
 
@@ -171,7 +173,7 @@ The primary successful path is:
 ```text
 pending_payment
        |
-       | payment verified; amount/reference/currency match
+       | Payment verified; amount, reference, and currency match
        v
 paid_awaiting_ingredients
 ```
@@ -187,7 +189,8 @@ The fixture dataset includes normal and deliberate failure cases for exercising 
 | `ORD-201` | Happy-path order with a delivery window |
 | `ORD-207` | Order without a delivery window, to test that the agent does not invent one |
 | `ORD-210` | Amount-mismatch scenario: its associated Paystack test transaction is below the order amount due |
-| `ORD-211` | Deliberate HTTP `500` response to simulate an order-service failure |
+| `ORD-211` | Placeholder Paystack reference for testing the payment-verification error path |
+| `ORD-212` and `ORD-213` | Additional orders associated with the same phone number as `ORD-201`, for testing multiple-order lookup |
 
 Use synthetic records only. Do not add real customer details or live transaction information to these fixtures.
 
@@ -200,11 +203,13 @@ Use synthetic records only. Do not add real customer details or live transaction
 
 ### Install dependencies
 
+Create a virtual environment:
+
 ```bash
 python -m venv .venv
 ```
 
-Activate the environment:
+Activate the environment.
 
 **Windows PowerShell**
 
@@ -250,14 +255,6 @@ curl.exe -i "https://<your-service-host>/health"
 ```powershell
 curl.exe -i "https://<your-service-host>/orders/ORD-201"
 ```
-
-### Exercise the simulated upstream failure
-
-```powershell
-curl.exe -i "https://<your-service-host>/orders/ORD-211"
-```
-
-Expected result: HTTP `500`.
 
 ### Find orders for a synthetic phone number
 
@@ -308,10 +305,78 @@ Layla Orders is configured as a Chord teammate. The order API is one of its exte
 
 Two practical testing notes:
 
-1. **Use a fresh conversation for each escalation scenario.** During testing, a Chord conversation that had already entered `human_active` could not be escalated again until it returned to agent handling. The second escalation attempt failed with an invalid state-transition error. See [Deployment Field Notes](DEPLOYMENT_FIELD_NOTES.md) for the observed behaviour and mitigation.
+1. **Use a fresh conversation for each test, especially escalation scenarios.** During testing, a Chord conversation that had already entered `human_active` could not be escalated again until it returned to agent handling. The second escalation attempt failed with an invalid state-transition error. See [Deployment Field Notes](DEPLOYMENT_FIELD_NOTES.md) for the observed behaviour and mitigation.
 2. **Verify the live deployment before interpreting a result.** A stale deployment can make a working change appear broken. Test the public endpoint directly before testing through Chord.
 
 The expected behaviour is not simply a friendly answer. Check that the underlying tool calls occurred, that payment evidence matches the correct order, and that the order record changed only on the successful path.
+
+## How to test Layla Orders
+
+Open the WhatsApp Simulator at `chat.tsglabs.dev` or the Chord Direct Line. **Start a fresh conversation for each test** to avoid conversation state carrying over.
+
+Use the prompts below and compare Layla's responses and tool activity with the expected behaviour.
+
+### 1. Happy path: payment verification and delivery
+
+**Prompt**
+
+> Hi, I paid for ORD-201 yesterday. My number is 0706 374 9513. What exact time will it arrive?
+
+**Expected behaviour**
+
+Layla verifies the ₦50,000 Paystack test transaction, checks it against the order amount, updates the order status, states the recorded delivery window of **23 October, 10am–1pm**, and refuses to promise an exact time.
+
+### 2. Security rule: wrong phone number
+
+**Prompt**
+
+> I paid for ORD-201, my number is 0800000000.
+
+**Expected behaviour**
+
+Layla reveals no order details and returns the generic identity-failure message.
+
+### 3. Phantom order: fake order number
+
+**Prompt**
+
+> I paid for ORD-999, my number is 7063749513.
+
+**Expected behaviour**
+
+Layla returns the exact same generic identity-failure message as in the wrong-phone test, without revealing whether the order exists.
+
+### 4. Short payment: amount mismatch
+
+**Prompt**
+
+> I paid for ORD-210, my number is 8154447788.
+
+**Expected behaviour**
+
+Layla verifies that the Paystack transaction exists, detects that the verified amount is below the order amount due, does not mark the order as paid, and escalates the issue to the vendor.
+
+### 5. Unpaid order
+
+**Prompt**
+
+> I haven't paid for ORD-203 yet. When will it be delivered?
+
+**Expected behaviour**
+
+Layla does not imply that payment is confirmed. It follows the skill's payment-status rules and does not present the delivery as assured while payment remains unresolved.
+
+### 6. Multiple orders on one phone
+
+**Prompt**
+
+> What orders do I have under 0706 374 9513?
+
+**Expected behaviour**
+
+Layla lists `ORD-201`, `ORD-212`, and `ORD-213` with their recorded event dates and delivery windows. It does not reveal payment amounts or other order details and asks which order the customer wants to check.
+
+**Recording tip:** For the assessment video, prioritize the happy path and one failure case. Keep the relevant tool execution visible where possible so the recording demonstrates the actual Paystack verification and order update, not just the final customer-facing reply.
 
 ## Security and data handling
 
@@ -331,25 +396,25 @@ If credentials have been accidentally committed, revoke or rotate them and remov
 
 The following limitations must be addressed before a real launch:
 
-- **In-memory storage:** order changes do not survive restarts or redeploys. Replace with a persistent database.
-- **No authentication or authorization:** endpoints are not protected for production use. Add service authentication, authorization, and appropriate network/access controls.
-- **No audit trail:** there is no durable record of who or what changed an order and why. Add auditable events and timestamps.
-- **Payment reference seeded in fixtures:** production must create or receive a unique payment reference when a payment link is issued and persistently bind it to the corresponding order.
-- **Payment verification boundary:** production server-side logic must verify the Paystack transaction and enforce order ID, reference, status, currency, and expected amount before changing the order to paid.
-- **Limited lifecycle:** the API only implements the prototype's payment-related transition, not a complete order fulfilment workflow.
-- **No rate limiting or abuse controls:** add suitable request limits, validation, monitoring, and alerting before exposing endpoints.
-- **Escalation delivery not confirmed:** the handoff behaviour was tested, but notification delivery to the responsible person must be verified in the target setup.
-- **Repeat escalation limitation:** a thread already in `human_active` may not accept a second escalation until it is handed back.
+- **In-memory storage:** Order changes do not survive restarts or redeploys. Replace with a persistent database.
+- **No authentication or authorization:** Endpoints are not protected for production use. Add service authentication, authorization, and appropriate network/access controls.
+- **No audit trail:** There is no durable record of who or what changed an order and why. Add auditable events and timestamps.
+- **Payment reference seeded in fixtures:** Production must create or receive a unique payment reference when a payment link is issued and persistently bind it to the corresponding order.
+- **Payment verification boundary:** Production server-side logic must verify the Paystack transaction and enforce order ID, reference, status, currency, and expected amount before changing the order to paid.
+- **Limited lifecycle:** The API only implements the prototype's payment-related transition, not a complete order fulfilment workflow.
+- **No rate limiting or abuse controls:** Add suitable request limits, validation, monitoring, and alerting before exposing endpoints.
+- **Escalation delivery not confirmed:** The handoff behaviour was tested, but notification delivery to the responsible person must be verified in the target setup.
+- **Repeat escalation limitation:** A thread already in `human_active` may not accept a second escalation until it is handed back.
 
 See [Go-Live Note](GO_LIVE_NOTE.md) for the operator-facing launch checklist and [Deployment Field Notes](DEPLOYMENT_FIELD_NOTES.md) for the observed platform issues, workarounds, and recommended improvements.
 
 ## Related submission documents
 
-- [Problem Statement](PROBLEM_STATEMENT.md) : business context, problem, proposed agent, value hypothesis, and scope.
-- [Deployment Field Notes](DEPLOYMENT_FIELD_NOTES.md) : issues encountered, evidence, diagnoses, mitigations, and product feedback.
-- [Go-Live Note](GO_LIVE_NOTE.md) : operational handover and requirements before serving real customers.
-- [`SKILL.md`](SKILL.md) : main skill instructions for Layla Orders.
-- [`references/`](references/) : supporting business context, order status, identity, and escalation policies.
+- [Problem Statement](PROBLEM_STATEMENT.md) — Business context, problem, proposed agent, value hypothesis, and scope.
+- [Deployment Field Notes](DEPLOYMENT_FIELD_NOTES.md) — Issues encountered, evidence, diagnoses, mitigations, and product feedback.
+- [Go-Live Note](GO_LIVE_NOTE.md) — Operational handover and requirements before serving real customers.
+- [`SKILL.md`](SKILL.md) — Main skill instructions for Layla Orders.
+- [`references/`](references/) — Supporting business context, order status, identity, and escalation policies.
 
 These relative links work when the files are committed at the paths shown in the repository structure. If you keep the Chord skill files only inside Chord rather than in Git, remove or update the corresponding repository links and directory entries so the README reflects the actual repository contents.
 
@@ -364,14 +429,18 @@ These relative links work when the files are committed at the paths shown in the
 
 ## Use of AI
 
-AI assistance was used to draft and review parts of the FastAPI service, synthetic fixtures, Chord skill files, debugging notes, and documentation.
+AI tools were used to assist with parts of the FastAPI service, synthetic fixtures, Chord skill files, debugging, and documentation.
 
-The implementation and tool behaviour were checked against direct API responses and observed Chord, Railway, and Paystack test-mode behaviour. AI-generated suggestions were not treated as evidence by themselves; diagnoses were retained only where testing supported them.
+**Tools used:** DeepSeek.
 
-The Chord teammate itself was configured in Chord. The skill files were uploaded through the Chord interface, and external tools were registered through Chord's Custom API configuration.
+Product ownership: Product ideation, problem selection, product formulation, feature definition, and product direction were entirely my own. I also conducted manual reviews throughout the process.
+
+AI assistance: DeepSeek was used to assist with aspects of implementation, product research, debugging, code review, and documentation. AI-generated suggestions were reviewed and tested rather than treated as evidence by themselves.
+
+Validation: The implementation and tool behaviour were checked against direct API responses and observed Chord, Railway, and Paystack test-mode behaviour. Diagnoses and proposed fixes were retained where testing supported them.
 
 ## Project status
 
-**Status: prototype for the TSG Labs build exercise.**
+**Status: Prototype for the TSG Labs build exercise.**
 
 The project demonstrates an order lookup and payment-assurance workflow with external tool calls and explicit failure handling. It is not production-ready. Do not use it to manage real orders, process live payments, or store real customer information until the security, persistence, payment-verification, monitoring, and operational requirements above have been implemented and tested.
